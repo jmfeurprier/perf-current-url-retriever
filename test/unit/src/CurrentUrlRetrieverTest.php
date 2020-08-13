@@ -1,84 +1,69 @@
 <?php
 
-namespace perf\Http\Url;
+namespace perf\CurrentUrlRetriever;
 
-/**
- *
- */
-class CurrentUrlRetrieverTest extends \PHPUnit_Framework_TestCase
+use perf\CurrentUrlRetriever\Exception\CurrentUrlRetrieverException;
+use PHPUnit\Framework\TestCase;
+
+class CurrentUrlRetrieverTest extends TestCase
 {
+    private CurrentUrlRetriever $retriever;
 
-    /**
-     *
-     */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->retriever = new CurrentUrlRetriever();
     }
 
-    /**
-     *
-     */
     public function testCreate()
     {
         $result = CurrentUrlRetriever::create();
 
-        $this->assertInstanceOf('\\' . __NAMESPACE__ . '\\CurrentUrlRetriever', $result);
+        $this->assertInstanceOf(CurrentUrlRetriever::class, $result);
     }
 
-    /**
-     *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Unable to retrieve host.
-     */
     public function testRetrieveWithUnresolvableHostWillThrowException()
     {
-        $serverValues = array(
+        $serverValues = [
             'REQUEST_URI' => '/baz.qux?abc=def',
-        );
+        ];
+
+        $this->expectException(CurrentUrlRetrieverException::class);
+        $this->expectExceptionMessage('Unable to retrieve host.');
 
         $this->retriever->retrieve($serverValues);
     }
 
-    /**
-     *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Unable to retrieve URI.
-     */
     public function testRetrieveWithUnresolvableUrlWillThrowException()
     {
-        $serverValues = array(
+        $serverValues = [
             'HTTP_HOST' => 'foo.bar',
-        );
+        ];
+
+        $this->expectException(CurrentUrlRetrieverException::class);
+        $this->expectExceptionMessage('Unable to retrieve URI.');
 
         $this->retriever->retrieve($serverValues);
     }
 
-    /**
-     *
-     */
     public function testRetrieve()
     {
-        $serverValues = array(
+        $serverValues = [
             'HTTP_HOST'   => 'foo.bar',
             'REQUEST_URI' => '/baz.qux?abc=def',
-        );
+        ];
 
         $result = $this->retriever->retrieve($serverValues);
 
         $this->assertSame('http://foo.bar/baz.qux?abc=def', $result);
     }
 
-    /**
-     *
-     */
     public function testRetrieveWithHttpsProtocol()
     {
-        $serverValues = array(
+        $serverValues = [
             'HTTP_HOST'   => 'foo.bar',
             'REQUEST_URI' => '/baz.qux?abc=def',
             'HTTPS'       => '1',
-        );
+        ];
 
         $result = $this->retriever->retrieve($serverValues);
 
